@@ -22,27 +22,20 @@ import {
 } from '@elyra/canvas';
 import {
   IconUtil,
+  Dropzone,
   clearPipelineIcon,
   dragDropIcon,
   exportPipelineIcon,
-  pipelineIcon,
   savePipelineIcon,
   runtimesIcon,
   showBrowseFileDialog,
-  showFormDialog,
-  errorIcon,
-  RequestErrors
+  errorIcon
 } from '@elyra/ui-components';
 
-import { Dropzone } from '@elyra/ui-components';
 import { JupyterFrontEnd } from '@jupyterlab/application';
 import { showDialog, Dialog, ReactWidget } from '@jupyterlab/apputils';
 import { PathExt } from '@jupyterlab/coreutils';
-import {
-  DocumentRegistry,
-  ABCWidgetFactory,
-  DocumentWidget
-} from '@jupyterlab/docregistry';
+import { DocumentRegistry } from '@jupyterlab/docregistry';
 import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 import { NotebookPanel } from '@jupyterlab/notebook';
 import { ServiceManager } from '@jupyterlab/services';
@@ -65,25 +58,19 @@ import * as React from 'react';
 import { IntlProvider } from 'react-intl';
 
 import { CanvasManager } from './canvas';
-import { PIPELINE_CURRENT_VERSION } from './constants';
-import * as i18nData from './en.json';
-import { formDialogWidget } from './formDialogWidget';
-import * as palette from './palette.json';
-
-import { PipelineExportDialog } from './PipelineExportDialog';
 import {
-  PipelineService,
+  PIPELINE_CURRENT_VERSION,
   KFP_SCHEMA,
   RUNTIMES_NAMESPACE
-} from './PipelineService';
-import { PipelineSubmissionDialog } from './PipelineSubmissionDialog';
+} from './constants';
+import * as i18nData from './en.json';
+import * as palette from './palette.json';
 
 import * as properties from './properties.json';
 import { StringArrayInput } from './StringArrayInput';
-import Utils from './utils';
+import { Utils } from './utils';
 import { checkCircularReferences, ILink } from './validation';
 
-const PIPELINE_CLASS = 'elyra-PipelineEditor';
 const NODE_TOOLTIP_CLASS = 'elyra-PipelineNodeTooltip';
 
 const TIP_TYPE_NODE = 'tipTypeNode';
@@ -136,7 +123,15 @@ export class PipelineEditorWidget extends ReactWidget {
   browserFactory: IFileBrowserFactory;
   context: DocumentRegistry.Context;
   serviceManager: ServiceManager;
-  addFileToPipelineSignal: Signal<PipelineEditorFactory, any>;
+  addFileToPipelineSignal: Signal<any, any>;
+  handleExportPipeline: (
+    pipeline_path: string,
+    pipelineFlow: any
+  ) => Promise<void>;
+  handleRunPipeline: (
+    pipeline_path: string,
+    pipelineFlow: any
+  ) => Promise<void>;
 
   constructor(props: any) {
     super(props);
@@ -146,6 +141,8 @@ export class PipelineEditorWidget extends ReactWidget {
     this.context = props.context;
     this.serviceManager = props.serviceManager;
     this.addFileToPipelineSignal = props.addFileToPipelineSignal;
+    this.handleExportPipeline = props.handleExportPipeline;
+    this.handleRunPipeline = props.handleRunPipeline;
   }
 
   render(): React.ReactElement {
@@ -158,6 +155,8 @@ export class PipelineEditorWidget extends ReactWidget {
         widgetId={this.parent.id}
         serviceManager={this.serviceManager}
         addFileToPipelineSignal={this.addFileToPipelineSignal}
+        handleExportPipeline={this.handleExportPipeline}
+        handleRunPipeline={this.handleRunPipeline}
       />
     );
   }
@@ -176,8 +175,16 @@ export namespace PipelineEditor {
     browserFactory: IFileBrowserFactory;
     widgetContext: DocumentRegistry.Context;
     serviceManager: ServiceManager;
-    addFileToPipelineSignal: Signal<PipelineEditorFactory, any>;
+    addFileToPipelineSignal: Signal<any, any>;
     widgetId: string;
+    handleExportPipeline: (
+      pipeline_path: string,
+      pipelineFlow: any
+    ) => Promise<void>;
+    handleRunPipeline: (
+      pipeline_path: string,
+      pipelineFlow: any
+    ) => Promise<void>;
   }
 
   /**
@@ -226,7 +233,7 @@ export class PipelineEditor extends React.Component<
   canvasController: any;
   widgetContext: DocumentRegistry.Context;
   widgetId: string;
-  addFileToPipelineSignal: Signal<PipelineEditorFactory, any>;
+  addFileToPipelineSignal: Signal<any, any>;
   position = 10;
   node: React.RefObject<HTMLDivElement>;
   propertiesInfo: any;
@@ -451,11 +458,7 @@ export class PipelineEditor extends React.Component<
     this.setState({ emptyPipeline: Utils.isEmptyPipeline(pipelineFlow) });
   }
 
-  async initPropertiesInfo(): Promise<void> {
-    const runtimeImages = await PipelineService.getRuntimeImages().catch(
-      error => RequestErrors.serverError(error)
-    );
-
+  async initPropertiesInfo(runtimeImages: any): Promise<void> {
     const imageEnum = [];
     for (const runtimeImage in runtimeImages) {
       imageEnum.push(runtimeImage);
@@ -470,6 +473,8 @@ export class PipelineEditor extends React.Component<
       appData: { id: '' },
       labelEditable: true
     };
+
+    this.handleOpenPipeline();
   }
 
   openPropertiesDialog(source: any): void {
@@ -559,7 +564,7 @@ export class PipelineEditor extends React.Component<
 
   propertiesActionHandler(id: string, appData: any, data: any): void {
     const propertyId = { name: data.parameter_ref };
-    const filename = PipelineService.getWorkspaceRelativeNodePath(
+    const filename = Utils.getWorkspaceRelativeNodePath(
       this.widgetContext.path,
       this.propertiesController.getPropertyValue('filename')
     );
@@ -579,7 +584,7 @@ export class PipelineEditor extends React.Component<
         if (result.button.accept && result.value.length) {
           this.propertiesController.updatePropertyValue(
             propertyId,
-            PipelineService.getPipelineRelativeNodePath(
+            Utils.getPipelineRelativeNodePath(
               this.widgetContext.path,
               result.value[0].path
             )
@@ -840,7 +845,7 @@ export class PipelineEditor extends React.Component<
    */
   handleOpenFile(selectedNodes: any): void {
     for (let i = 0; i < selectedNodes.length; i++) {
-      const path = PipelineService.getWorkspaceRelativeNodePath(
+      const path = Utils.getWorkspaceRelativeNodePath(
         this.widgetContext.path,
         this.canvasController.getNode(selectedNodes[i]).app_data.filename
       );
@@ -861,61 +866,11 @@ export class PipelineEditor extends React.Component<
       });
       return;
     }
-    const runtimes = await PipelineService.getRuntimes().catch(error =>
-      RequestErrors.serverError(error)
-    );
 
-    const dialogOptions: Partial<Dialog.IOptions<any>> = {
-      title: 'Export pipeline',
-      body: formDialogWidget(<PipelineExportDialog runtimes={runtimes} />),
-      buttons: [Dialog.cancelButton(), Dialog.okButton()],
-      defaultButton: 1,
-      focusNodeSelector: '#runtime_config'
-    };
-    const dialogResult = await showFormDialog(dialogOptions);
-
-    if (dialogResult.value == null) {
-      // When Cancel is clicked on the dialog, just return
-      return;
-    }
-
-    // prepare pipeline submission details
     const pipelineFlow = this.canvasController.getPipelineFlow();
     const pipeline_path = this.widgetContext.path;
 
-    const pipeline_dir = PathExt.dirname(pipeline_path);
-    const pipeline_name = PathExt.basename(
-      pipeline_path,
-      PathExt.extname(pipeline_path)
-    );
-    const pipeline_export_format = dialogResult.value.pipeline_filetype;
-
-    let pipeline_export_path = pipeline_name + '.' + pipeline_export_format;
-    // only prefix the '/' when pipeline_dir is non-empty
-    if (pipeline_dir) {
-      pipeline_export_path = pipeline_dir + '/' + pipeline_export_path;
-    }
-
-    const overwrite = dialogResult.value.overwrite;
-
-    const runtime_config = dialogResult.value.runtime_config;
-    const runtime = PipelineService.getRuntimeName(runtime_config, runtimes);
-
-    PipelineService.setNodePathsRelativeToWorkspace(
-      pipelineFlow.pipelines[0],
-      this.widgetContext.path
-    );
-
-    pipelineFlow.pipelines[0]['app_data']['name'] = pipeline_name;
-    pipelineFlow.pipelines[0]['app_data']['runtime'] = runtime;
-    pipelineFlow.pipelines[0]['app_data']['runtime-config'] = runtime_config;
-
-    PipelineService.exportPipeline(
-      pipelineFlow,
-      pipeline_export_format,
-      pipeline_export_path,
-      overwrite
-    ).catch(error => RequestErrors.serverError(error));
+    this.props.handleExportPipeline(pipeline_path, pipelineFlow);
   }
 
   async handleOpenPipeline(): Promise<void> {
@@ -975,7 +930,7 @@ export class PipelineEditor extends React.Component<
             }).then(result => {
               if (result.button.accept) {
                 // proceed with migration
-                pipelineJson = PipelineService.convertPipeline(
+                pipelineJson = Utils.convertPipeline(
                   pipelineJson,
                   this.widgetContext.path
                 );
@@ -1107,7 +1062,7 @@ export class PipelineEditor extends React.Component<
     const validationErrors: string[] = [];
     const notebookValidationErr = await this.serviceManager.contents
       .get(
-        PipelineService.getWorkspaceRelativeNodePath(
+        Utils.getWorkspaceRelativeNodePath(
           this.widgetContext.path,
           node.app_data.filename
         )
@@ -1217,60 +1172,10 @@ export class PipelineEditor extends React.Component<
       return;
     }
 
-    const pipelineName = PathExt.basename(
-      this.widgetContext.path,
-      PathExt.extname(this.widgetContext.path)
-    );
-
-    const runtimes = await PipelineService.getRuntimes(false).catch(error =>
-      RequestErrors.serverError(error)
-    );
-    const local_runtime: any = {
-      name: 'local',
-      display_name: 'Run in-place locally'
-    };
-    runtimes.unshift(JSON.parse(JSON.stringify(local_runtime)));
-
-    const dialogOptions: Partial<Dialog.IOptions<any>> = {
-      title: 'Run pipeline',
-      body: formDialogWidget(
-        <PipelineSubmissionDialog name={pipelineName} runtimes={runtimes} />
-      ),
-      buttons: [Dialog.cancelButton(), Dialog.okButton()],
-      defaultButton: 1,
-      focusNodeSelector: '#pipeline_name'
-    };
-    const dialogResult = await showFormDialog(dialogOptions);
-
-    if (dialogResult.value == null) {
-      // When Cancel is clicked on the dialog, just return
-      return;
-    }
-
-    // prepare pipeline submission details
     const pipelineFlow = this.canvasController.getPipelineFlow();
+    const pipeline_path = this.widgetContext.path;
 
-    const runtime_config = dialogResult.value.runtime_config;
-    const runtime =
-      PipelineService.getRuntimeName(runtime_config, runtimes) || 'local';
-
-    PipelineService.setNodePathsRelativeToWorkspace(
-      pipelineFlow.pipelines[0],
-      this.widgetContext.path
-    );
-
-    pipelineFlow.pipelines[0]['app_data']['name'] =
-      dialogResult.value.pipeline_name;
-    pipelineFlow.pipelines[0]['app_data']['runtime'] = runtime;
-    pipelineFlow.pipelines[0]['app_data']['runtime-config'] = runtime_config;
-
-    PipelineService.submitPipeline(
-      pipelineFlow,
-      PipelineService.getDisplayName(
-        dialogResult.value.runtime_config,
-        runtimes
-      )
-    ).catch(error => RequestErrors.serverError(error));
+    this.props.handleRunPipeline(pipeline_path, pipelineFlow);
   }
 
   handleSavePipeline(): void {
@@ -1310,12 +1215,6 @@ export class PipelineEditor extends React.Component<
     }
   }
 
-  componentDidMount(): void {
-    this.initPropertiesInfo().finally(() => {
-      this.handleOpenPipeline();
-    });
-  }
-
   componentDidUpdate(): void {
     const inputFields = document.querySelectorAll('.properties-readonly');
     for (const inputField of inputFields) {
@@ -1335,43 +1234,5 @@ export class PipelineEditor extends React.Component<
       tooltip.innerText = inputField.children[0].innerHTML;
       inputField.appendChild(tooltip);
     }
-  }
-}
-
-export class PipelineEditorFactory extends ABCWidgetFactory<DocumentWidget> {
-  shell: JupyterFrontEnd.IShell;
-  commands: CommandRegistry;
-  browserFactory: IFileBrowserFactory;
-  serviceManager: ServiceManager;
-  addFileToPipelineSignal: Signal<this, any>;
-
-  constructor(options: any) {
-    super(options);
-    this.shell = options.shell;
-    this.commands = options.commands;
-    this.browserFactory = options.browserFactory;
-    this.serviceManager = options.serviceManager;
-    this.addFileToPipelineSignal = new Signal<this, any>(this);
-  }
-
-  protected createNewWidget(context: DocumentRegistry.Context): DocumentWidget {
-    // Creates a blank widget with a DocumentWidget wrapper
-    const props = {
-      shell: this.shell,
-      commands: this.commands,
-      browserFactory: this.browserFactory,
-      context: context,
-      addFileToPipelineSignal: this.addFileToPipelineSignal,
-      serviceManager: this.serviceManager
-    };
-    const content = new PipelineEditorWidget(props);
-    const widget = new DocumentWidget({
-      content,
-      context,
-      node: document.createElement('div')
-    });
-    widget.addClass(PIPELINE_CLASS);
-    widget.title.icon = pipelineIcon;
-    return widget;
   }
 }

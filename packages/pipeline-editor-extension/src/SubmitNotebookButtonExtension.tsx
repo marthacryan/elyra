@@ -15,6 +15,7 @@
  */
 
 import { NotebookParser } from '@elyra/application';
+import { Utils } from '@elyra/pipeline-editor';
 import { RequestErrors, showFormDialog } from '@elyra/ui-components';
 import { Dialog, ToolbarButton } from '@jupyterlab/apputils';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
@@ -26,7 +27,6 @@ import * as React from 'react';
 import { formDialogWidget } from './formDialogWidget';
 import { NotebookSubmissionDialog } from './NotebookSubmissionDialog';
 import { PipelineService } from './PipelineService';
-import Utils from './utils';
 
 /**
  * Submit notebook button extension

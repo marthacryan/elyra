@@ -23,14 +23,11 @@ import {
   IMetadataDisplayProps,
   IMetadataDisplayState
 } from '@elyra/metadata-common';
+import { KFP_SCHEMA, RUNTIMES_NAMESPACE } from '@elyra/pipeline-editor';
 import { RequestErrors } from '@elyra/ui-components';
 import React from 'react';
 
-import {
-  PipelineService,
-  KFP_SCHEMA,
-  RUNTIMES_NAMESPACE
-} from './PipelineService';
+import { PipelineService } from './PipelineService';
 
 /**
  * A React Component for displaying the runtimes list.

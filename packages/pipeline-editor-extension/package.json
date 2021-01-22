@@ -1,7 +1,12 @@
 {
-  "name": "@elyra/pipeline-editor",
+  "name": "@elyra/pipeline-editor-extension",
   "version": "2.0.0-dev",
-  "description": "Visual editor to build Notebook pipelines",
+  "description": "JupyterLab extension - Visual editor to build Notebook pipelines",
+  "keywords": [
+    "jupyter",
+    "jupyterlab",
+    "jupyterlab-extension"
+  ],
   "homepage": "https://github.com/elyra-ai/elyra",
   "bugs": {
     "url": "https://github.com/elyra-ai/elyra/issues"
@@ -31,7 +36,19 @@
     "@elyra/application": "^2.0.0-dev",
     "@elyra/canvas": "9.2.1",
     "@elyra/metadata-common": "^2.0.0-dev",
+    "@elyra/pipeline-editor": "^2.0.0-dev",
     "@elyra/ui-components": "^2.0.0-dev",
+    "@jupyterlab/application": "^3.0.0",
+    "@jupyterlab/apputils": "^3.0.0",
+    "@jupyterlab/coreutils": "^5.0.0",
+    "@jupyterlab/docregistry": "^3.0.0",
+    "@jupyterlab/filebrowser": "^3.0.0",
+    "@jupyterlab/filebrowser-extension": "^3.0.0",
+    "@jupyterlab/launcher": "^3.0.0",
+    "@jupyterlab/mainmenu": "^3.0.0",
+    "@jupyterlab/notebook": "^3.0.0",
+    "@jupyterlab/outputarea": "^3.0.0",
+    "@jupyterlab/ui-components": "^3.0.0",
     "@lumino/algorithm": "^1.3.3",
     "@lumino/coreutils": "^1.5.3",
     "@lumino/disposable": "^1.4.3",
@@ -71,5 +88,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "jupyterlab": {
+    "extension": true
   }
 }

@@ -15,6 +15,7 @@
  */
 import 'jest';
 
+import { PipelineEditorWidget } from '@elyra/pipeline-editor';
 import { LabShell } from '@jupyterlab/application';
 import { WidgetTracker } from '@jupyterlab/apputils';
 import { DocumentManager } from '@jupyterlab/docmanager';
@@ -37,11 +38,7 @@ import { UUID } from '@lumino/coreutils';
 // import Adapter from 'enzyme-adapter-react-16';
 // import * as React from 'react';
 
-import {
-  PipelineEditorFactory,
-  PipelineEditorWidget
-  // PipelineEditor
-} from '../PipelineEditorWidget';
+import { PipelineEditorFactory } from '../PipelineEditorFactory';
 
 const PIPELINE_FACTORY = 'Pipeline Editor';
 const PIPELINE = 'pipeline';

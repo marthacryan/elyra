@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { checkCircularReferences } from './../validation';
+import { checkCircularReferences } from '@elyra/pipeline-editor';
 
 const linkExamples = [
   // ╭───╮      ╭───╮

@@ -21,7 +21,7 @@ import { DocumentRegistry } from '@jupyterlab/docregistry';
 import { Contents } from '@jupyterlab/services';
 import { LabIcon, notebookIcon, pythonIcon } from '@jupyterlab/ui-components';
 
-import { PipelineService } from './PipelineService';
+// import { PipelineService } from './PipelineService';
 
 enum ContentType {
   notebook = 'notebook',
@@ -91,10 +91,11 @@ export class CanvasManager {
       );
       data.nodeTemplate.app_data[
         'filename'
-      ] = PipelineService.getPipelineRelativeNodePath(
-        this.widgetContext.path,
-        file.path
-      );
+        // ] = PipelineService.getPipelineRelativeNodePath(
+        //   this.widgetContext.path,
+        //   file.path
+        // );
+      ] = file.path;
       data.nodeTemplate.app_data['runtime_image'] = '';
       data.nodeTemplate.app_data['env_vars'] = env_vars;
       data.nodeTemplate.app_data['include_subdirectories'] = false;

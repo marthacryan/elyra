@@ -53,6 +53,7 @@ uninstall:
 	$(call UNINSTALL_LAB_EXTENSION,@elyra/theme-extension)
 	$(call UNINSTALL_LAB_EXTENSION,@elyra/code-snippet-extension)
 	$(call UNINSTALL_LAB_EXTENSION,@elyra/metadata-extension)
+	$(call UNINSTALL_LAB_EXTENSION,@elyra/pipeline-editor)
 	$(call UNINSTALL_LAB_EXTENSION,@elyra/pipeline-editor-extension)
 	$(call UNINSTALL_LAB_EXTENSION,@elyra/python-editor-extension)
 	pip uninstall -y jupyterlab-git
@@ -101,6 +102,7 @@ install-ui: build-ui
 	$(call INSTALL_LAB_EXTENSION,code-snippet)
 	$(call INSTALL_LAB_EXTENSION,metadata)
 	$(call INSTALL_LAB_EXTENSION,pipeline-editor)
+	$(call INSTALL_LAB_EXTENSION,pipeline-editor-extension)
 	$(call INSTALL_LAB_EXTENSION,python-editor)
 
 install: install-server install-ui ## Build and install
@@ -140,6 +142,7 @@ dist-ui: build-ui
 	$(call PACKAGE_LAB_EXTENSION,code-snippet)
 	$(call PACKAGE_LAB_EXTENSION,metadata)
 	$(call PACKAGE_LAB_EXTENSION,pipeline-editor)
+	$(call PACKAGE_LAB_EXTENSION,pipeline-editor-extension)
 	$(call PACKAGE_LAB_EXTENSION,python-editor)
 
 release: dist-ui build-server ## Build wheel file for release

@@ -15,10 +15,10 @@
  */
 
 import { IDictionary } from '@elyra/application';
+import { Utils } from '@elyra/pipeline-editor';
 import * as React from 'react';
 
 import { IRuntime } from './PipelineService';
-import Utils from './utils';
 
 interface IProps {
   runtimes: IRuntime[];
@@ -40,9 +40,9 @@ const EnvForm = ({ env }: { env: string[] }): JSX.Element => {
             </div>
           </td>
         </tr>
-        {Utils.chunkArray(env, 4).map((col, i) => (
+        {Utils.chunkArray(env, 4).map((col: any[], i: React.Key) => (
           <tr key={i}>
-            {col.map(envVar => (
+            {col.map((envVar: any): any => (
               <td key={envVar}>
                 <label htmlFor={envVar}>{envVar}:</label>
                 <br />

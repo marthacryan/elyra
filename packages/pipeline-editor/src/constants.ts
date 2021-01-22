@@ -15,3 +15,8 @@
  */
 
 export const PIPELINE_CURRENT_VERSION = 3;
+
+export const RUNTIMES_NAMESPACE = 'runtimes';
+export const KFP_SCHEMA = 'kfp';
+export const RUNTIME_IMAGES_NAMESPACE = 'runtime-images';
+export const RUNTIME_IMAGE_SCHEMA = 'runtime-image';
